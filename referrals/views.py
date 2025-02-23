@@ -1,3 +1,5 @@
+from django.contrib.auth import get_user_model
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
@@ -6,7 +8,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import ReferralCode
-from .serializers import ReferralCodeSerializer
+from .serializers import ReferralCodeSerializer, EmailSerializer
+
+User = get_user_model()
 
 
 class CreateReferralCodeView(APIView):
@@ -29,6 +33,7 @@ class CreateReferralCodeView(APIView):
 
 
 class DeleteReferralCodeView(APIView):
+    serializer_class = ReferralCodeSerializer
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
@@ -54,3 +59,38 @@ class DeleteReferralCodeView(APIView):
             {'detail': 'Реферальный код успешно удален'},
             status=status.HTTP_200_OK
         )
+
+
+class GetReferralByEmailView(APIView):
+    serializer_class = EmailSerializer
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Реферальные коды'],
+        summary="Получить реферальный код по email",
+        description="Получение активного реферального кода по email реферера",
+    )
+
+    def post(self, request):
+        serializer = EmailSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=serializer.validated_data['email'])
+            referral_code = ReferralCode.objects.filter(
+                user=user,
+                expiration_date__gte=timezone.now()
+            ).latest('created_at')
+        except User.DoesNotExist:
+            return Response(
+                {'detail': "Пользователь не найден"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except ReferralCode.DoesNotExist:
+            return Response(
+                {"detail": 'Активный реферальный код отсутствует'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response(ReferralCodeSerializer(referral_code).data)

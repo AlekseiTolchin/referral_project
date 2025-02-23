@@ -15,3 +15,7 @@ class ReferralCodeSerializer(serializers.ModelSerializer):
             user=self.request.user,
             active=True
         )
+
+
+class EmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
