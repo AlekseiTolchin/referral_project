@@ -15,5 +15,11 @@ class ReferralCode(models.Model):
     def save(self, *args, **kwargs):
         if not self.code:
             self.code = str(uuid.uuid4()).replace("-", "")[:8].upper()
-        super().save(*args, **kwargs)
 
+        if self.active and self.pk is None:
+            ReferralCode.objects.filter(
+                user=self.user,
+                active=True
+            ).update(active=False)
+
+        super().save(*args, **kwargs)
