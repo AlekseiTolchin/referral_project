@@ -1,3 +1,8 @@
 from django.contrib import admin
+from .models import ReferralCode
+from .forms import ReferralCodeForm
 
-# Register your models here.
+
+@admin.register(ReferralCode)
+class ReferralCodeAdmin(admin.ModelAdmin):
+    form = ReferralCodeForm
