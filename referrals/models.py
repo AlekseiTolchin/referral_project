@@ -23,3 +23,9 @@ class ReferralCode(models.Model):
             ).update(active=False)
 
         super().save(*args, **kwargs)
+
+
+class ReferralRelations(models.Model):
+    referrer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='referrals')
+    referral = models.OneToOneField(User, on_delete=models.CASCADE, related_name='referred_by')
+    created_at = models.DateTimeField(auto_now_add=True)
