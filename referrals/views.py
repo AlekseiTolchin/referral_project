@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import ReferralCode
-from .serializers import ReferralCodeSerializer, EmailSerializer
+from .serializers import ReferralCodeSerializer, EmailSerializer, ReferralUserSerializer
 
 User = get_user_model()
 
@@ -94,3 +94,37 @@ class GetReferralByEmailView(APIView):
             )
 
         return Response(ReferralCodeSerializer(referral_code).data)
+
+
+class UserReferralsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=['Реферальная система'],
+        summary='Получить список рефералов по id',
+        description='Возвращает список всех пользователей, зарегистрированных по вашему реферальному коду',
+        responses={200: ReferralUserSerializer(many=True)}
+    )
+
+    def get(self, request, user_id):
+        # Проверка прав доступа
+        if not request.user.is_staff and request.user.id != int(user_id):
+            return Response(
+                {"detail": "Вы можете просматривать только своих рефералов"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            referrer = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "Пользователь не найден"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        referrals = User.objects.filter(
+            referred_by__referrer=referrer
+        ).order_by('-date_joined')
+
+        serializer = ReferralUserSerializer(referrals, many=True)
+        return Response(serializer.data)
