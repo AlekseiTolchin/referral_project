@@ -1,14 +1,18 @@
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import ReferralCode
-from .serializers import ReferralCodeSerializer, EmailSerializer, ReferralUserSerializer
+from .serializers import (
+    ReferralCodeSerializer,
+    EmailSerializer,
+    ReferralUserSerializer
+)
 
 User = get_user_model()
 
@@ -18,7 +22,7 @@ class CreateReferralCodeView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Реферальные коды'],
+        tags=['Реферальная система'],
         summary='Создать реферальный код',
         description='Создание нового реферального кода для текущего пользователя'
     )
@@ -37,7 +41,7 @@ class DeleteReferralCodeView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Реферальные коды'],
+        tags=['Реферальная система'],
         summary='Удалить реферальный код',
         description='Удаление реферального кода по id'
     )
@@ -66,7 +70,7 @@ class GetReferralByEmailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=['Реферальные коды'],
+        tags=['Реферальная система'],
         summary="Получить реферальный код по email",
         description="Получение активного реферального кода по email реферера",
     )
@@ -107,7 +111,6 @@ class UserReferralsView(APIView):
     )
 
     def get(self, request, user_id):
-        # Проверка прав доступа
         if not request.user.is_staff and request.user.id != int(user_id):
             return Response(
                 {"detail": "Вы можете просматривать только своих рефералов"},
