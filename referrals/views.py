@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -14,17 +14,22 @@ from .serializers import (
     ReferralUserSerializer
 )
 
+
 User = get_user_model()
 
 
 class CreateReferralCodeView(APIView):
-    serializer_class = ReferralCodeSerializer
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
         tags=['Реферальная система'],
         summary='Создать реферальный код',
-        description='Создание нового реферального кода для текущего пользователя'
+        description='Создание нового реферального кода для текущего пользователя',
+        request=ReferralCodeSerializer,
+        responses={
+            201: OpenApiResponse(response=ReferralCodeSerializer, description='Реферальный код успешно создан'),
+            400: OpenApiResponse(description='Неверные данные')
+        }
     )
 
     def post(self, request):
@@ -37,13 +42,18 @@ class CreateReferralCodeView(APIView):
 
 
 class DeleteReferralCodeView(APIView):
-    serializer_class = ReferralCodeSerializer
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
         tags=['Реферальная система'],
         summary='Удалить реферальный код',
-        description='Удаление реферального кода по id'
+        description='Удаление реферального кода по id',
+        parameters=[OpenApiParameter(name='pk', location=OpenApiParameter.PATH, type=int)],
+        responses={
+            200: OpenApiResponse(description='Реферальный код успешно удален'),
+            404: OpenApiResponse(description='Реферальный код не найден'),
+            403: OpenApiResponse(description='Нет прав на удаление этого кода')
+        }
     )
 
     def delete(self, request, pk):
@@ -66,13 +76,18 @@ class DeleteReferralCodeView(APIView):
 
 
 class GetReferralByEmailView(APIView):
-    serializer_class = EmailSerializer
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
         tags=['Реферальная система'],
-        summary="Получить реферальный код по email",
-        description="Получение активного реферального кода по email реферера",
+        summary='Получить реферальный код по email',
+        description='Получение активного реферального кода по email реферера',
+        request=EmailSerializer,
+        responses={
+            200: OpenApiResponse(response=ReferralCodeSerializer, description='Реферальный код найден'),
+            404: OpenApiResponse(description='Пользователь или активный реферальный код не найден'),
+            400: OpenApiResponse(description='Неверный формат email')
+        }
     )
 
     def post(self, request):
@@ -88,12 +103,12 @@ class GetReferralByEmailView(APIView):
             ).latest('created_at')
         except User.DoesNotExist:
             return Response(
-                {'detail': "Пользователь не найден"},
+                {'detail': 'Пользователь не найден'},
                 status=status.HTTP_404_NOT_FOUND
             )
         except ReferralCode.DoesNotExist:
             return Response(
-                {"detail": 'Активный реферальный код отсутствует'},
+                {'detail': 'Активный реферальный код отсутствует'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -107,13 +122,18 @@ class UserReferralsView(APIView):
         tags=['Реферальная система'],
         summary='Получить список рефералов по id',
         description='Возвращает список всех пользователей, зарегистрированных по вашему реферальному коду',
-        responses={200: ReferralUserSerializer(many=True)}
+        parameters=[OpenApiParameter(name='user_id', location=OpenApiParameter.PATH, type=int)],
+        responses={
+            200: OpenApiResponse(response=ReferralUserSerializer(many=True), description='Список рефералов'),
+            403: OpenApiResponse(description='Нет прав для просмотра этих рефералов'),
+            404: OpenApiResponse(description='Пользователь не найден')
+        }
     )
 
     def get(self, request, user_id):
         if not request.user.is_staff and request.user.id != int(user_id):
             return Response(
-                {"detail": "Вы можете просматривать только своих рефералов"},
+                {'detail': 'Вы можете просматривать только своих рефералов'},
                 status=status.HTTP_403_FORBIDDEN
             )
 
@@ -121,7 +141,7 @@ class UserReferralsView(APIView):
             referrer = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response(
-                {"detail": "Пользователь не найден"},
+                {'detail': 'Пользователь не найден'},
                 status=status.HTTP_404_NOT_FOUND
             )
 

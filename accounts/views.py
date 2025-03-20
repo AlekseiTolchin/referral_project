@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -12,16 +12,25 @@ from .serializers import UserSerializer
 
 
 class RegisterAPIView(APIView):
-    serializer_class = UserSerializer
 
     @extend_schema(
         tags=['Регистрация и аутентификация'],
         summary='Зарегистрировать пользователя с реферальным кодом или без него',
-        description='Поле "referral_code" заполняется при наличии реферального кода'
+        description='Поле "referral_code" заполняется при наличии реферального кода',
+        request=UserSerializer,
+        responses={
+            201: OpenApiResponse(
+                response=UserSerializer,
+                description='Пользователь успешно зарегистрирован'
+            ),
+            400: OpenApiResponse(
+                description='Неверные данные'
+            )
+        }
     )
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)

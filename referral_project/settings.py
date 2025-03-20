@@ -71,22 +71,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'referral_project.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
 DATABASES = {
-    'default': env.dj_db_url('DATABASE_URL')
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('POSTGRES_DB'),
+        'USER': env('POSTGRES_USER'),
+        'PASSWORD': env('POSTGRES_PASSWORD'),
+        'HOST': env('POSTGRES_HOST'),
+        'PORT': env('POSTGRES_PORT'),
+        'ATOMIC_REQUESTS': True,
+    },
 }
-
-DATABASES['default']['ENGINE'] = 'django.db.backends.postgresql_psycopg2'
 
 
 # Password validation
@@ -144,8 +139,8 @@ SPECTACULAR_SETTINGS = {
 }
 
 SIMPLE_JWT = {
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': env.bool('ROTATE_REFRESH_TOKENS', True),
+    'BLACKLIST_AFTER_ROTATION': env.bool('BLACKLIST_AFTER_ROTATION', True),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=env.int('ACCESS_TOKEN_LIFETIME', 7)),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=env.int('REFRESH_TOKEN_LIFETIME', 30)),
 }

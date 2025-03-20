@@ -22,6 +22,10 @@ git clone https://github.com/AlekseiTolchin/referral_project.git
 - `DJANGO_SUPERUSER_USERNAME`=admin
 - `DJANGO_SUPERUSER_PASSWORD`=admin
 - `ALLOWED_HOSTS`=0.0.0.0
+- `ROTATE_REFRESH_TOKENS`=True
+- `BLACKLIST_AFTER_ROTATION`=True
+- `ACCESS_TOKEN_LIFETIME`=7
+- `REFRESH_TOKEN_LIFETIME`=30
 
 Запустить команды:
 
